@@ -1,4 +1,4 @@
-package com.example.demo.mappers;
+package com.example.demo.mappings;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -12,7 +12,7 @@ import com.example.demo.dto.response.CourierDTO;
 import com.example.demo.entities.Courier;
 
 @Mapper( componentModel = "spring", imports = {LocalDateTime.class, LocalDate.class,Point.class,Double.class } )
-public abstract class CourierMaping {
+public abstract class CourierMapping {
 	
 	@Mappings({
 		@Mapping(source = "courierId", target="id"),

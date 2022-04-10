@@ -19,7 +19,7 @@ import org.springframework.data.geo.Point;
 import com.example.demo.dto.request.CourierRequestDTO;
 import com.example.demo.entities.Courier;
 import com.example.demo.entities.Store;
-import com.example.demo.mappers.CourierMaping;
+import com.example.demo.mappings.CourierMapping;
 import com.example.demo.repositories.IStoreRepository;
 import com.example.demo.services.StoreServiceImpl;
 import com.example.demo.utils.Calculator;
@@ -35,7 +35,7 @@ public class StoreServiceTest {
 	private StoreServiceImpl storeService;
 
 	@Mock
-	private CourierMaping maping;
+	private CourierMapping mapping;
 
 	@Before
 	public void setup() {
@@ -59,9 +59,9 @@ public class StoreServiceTest {
 				Calculator.createCircleAreaWithLocations(courierRequestDTO.getLat(), courierRequestDTO.getLng())))
 				.thenReturn(store);
 
-		when(maping.courierRequestDTOToCourierEntity(courierRequestDTO)).thenReturn(courier);
+		when(mapping.courierRequestDTOToCourierEntity(courierRequestDTO)).thenReturn(courier);
 
-		storeService.saveByCourier(courierRequestDTO);
+		storeService.saveByLocations(courierRequestDTO);
 		verify(storeRepository, times(1)).save(store);
 
 	}
@@ -77,7 +77,7 @@ public class StoreServiceTest {
 
 		when(storeRepository.queryingTotalDistances(1)).thenReturn(Optional.of(store));
 
-		storeService.queryingTotalDistances(1);
+		storeService.getTotalTravelDistance(1);
 
 		assertEquals(store.getId(), 1);
 

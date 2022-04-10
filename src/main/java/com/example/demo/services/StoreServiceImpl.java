@@ -12,7 +12,7 @@ import com.example.demo.dto.request.CourierRequestDTO;
 import com.example.demo.dto.response.CourierDTO;
 import com.example.demo.entities.Courier;
 import com.example.demo.entities.Store;
-import com.example.demo.mappers.CourierMaping;
+import com.example.demo.mappings.CourierMapping;
 import com.example.demo.repositories.IStoreRepository;
 import com.example.demo.utils.Calculator;
 
@@ -23,7 +23,7 @@ public class StoreServiceImpl implements IStoreService {
 	private IStoreRepository storesRepository;
 
 	@Autowired
-	private CourierMaping maping;
+	private CourierMapping mapping;
 
 	@Override
 	public Store getByGeolocationWithin(Double lat, Double lng) {
@@ -31,11 +31,11 @@ public class StoreServiceImpl implements IStoreService {
 	}
 
 	@Override
-	public void saveByCourier(CourierRequestDTO request) {
+	public void saveByLocations(CourierRequestDTO request) {
 
 		final Store store = getByGeolocationWithin(request.getLat(), request.getLng());
 
-		if (store != null && !isCourierTimesBetween(store, request.getCourierId())) {
+		if (store != null && !wasCourierRegisteredOneMinuteAgo(store, request.getCourierId())) {
 			save(preparedStoreData(store, request));
 		} else {
 			update(request);
@@ -51,10 +51,10 @@ public class StoreServiceImpl implements IStoreService {
 	}
 
 	@Override
-	public CourierDTO queryingTotalDistances(int id) {
+	public CourierDTO getTotalTravelDistance(int id) {
 		Store store = storesRepository.queryingTotalDistances(id).orElseThrow(() -> new NullPointerException());
-		Courier tst= store.getCourierList().stream().filter(item-> item.getId() == id).findAny().get();
-		return maping.courierEntityToCourierDTO(tst);
+		Courier filteredStore = store.getCourierList().stream().filter(item-> item.getId() == id).findAny().get();
+		return mapping.courierEntityToCourierDTO(filteredStore);
 	}
 
 	@Override
@@ -62,7 +62,7 @@ public class StoreServiceImpl implements IStoreService {
 		storesRepository.save(store);
 	}
 
-	private Boolean isCourierTimesBetween(final Store store, final int id) {
+	private Boolean wasCourierRegisteredOneMinuteAgo(final Store store, final int id) {
 		List<Store> result = storesRepository.findCourierTimeBetween(id,
 				LocalDateTime.now().minus(Duration.ofMinutes(1)), LocalDateTime.now());
 		if (CollectionUtils.isEmpty(result))
@@ -71,9 +71,9 @@ public class StoreServiceImpl implements IStoreService {
 	}
 
 	private Store preparedStoreData(final Store store, final CourierRequestDTO request) {
-		Set<Courier> allCourierList;
+		Set<Courier> courierList;
 
-		Courier courier = maping.courierRequestDTOToCourierEntity(request);
+		Courier courier = mapping.courierRequestDTOToCourierEntity(request);
 
 		Double totalDistance = Calculator.totalDistance(store.getGeolocation().getX(), store.getGeolocation().getY(),
 				request.getLat(), request.getLng(),
@@ -81,19 +81,14 @@ public class StoreServiceImpl implements IStoreService {
 		courier.setTotalDistances(totalDistance);
 
 		if (containsId(store.getCourierList(), courier.getId()))
-			allCourierList = updateCourierList(store.getCourierList(), courier);
+			courierList = updateCourierList(store.getCourierList(), courier);
 		else
-			allCourierList = insertCourierList(store.getCourierList(), courier);
+			courierList = insertCourierList(store.getCourierList(), courier);
 
-		store.getCourierList().addAll(allCourierList);
+		store.getCourierList().addAll(courierList);
 
 		return store;
 
-	}
-
-	@Override
-	public List<Store> getAll() {
-		return storesRepository.findAll();
 	}
 
 	public boolean containsId(final Set<Courier> list, final int id) {
@@ -101,13 +96,15 @@ public class StoreServiceImpl implements IStoreService {
 	}
 
 	public Set<Courier> updateCourierList(final Set<Courier> list, final Courier courier) {
-		return list.stream().filter(item -> item.getId() == courier.getId()).map(element -> {
-			element.setId(courier.getId());
-			element.setLastLacation(courier.getLastLacation());
-			element.setTime(courier.getTime());
-			element.setTotalDistances(courier.getTotalDistances());
-			return element;
-		}).collect(Collectors.toSet());
+		return list.stream()
+			.filter(item -> item.getId() == courier.getId())
+			.map(element -> {
+				element.setId(courier.getId());
+				element.setLastLacation(courier.getLastLacation());
+				element.setTime(courier.getTime());
+				element.setTotalDistances(courier.getTotalDistances());
+				return element;
+			}).collect(Collectors.toSet());
 	}
 
 	public Set<Courier> insertCourierList(final Set<Courier> list, final Courier courier) {

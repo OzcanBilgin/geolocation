@@ -22,14 +22,14 @@ public class StoreController {
 	private IStoreService storeService;
 
 	@PostMapping("/save")
-	public ResponseEntity<String> saveByCourier(@RequestBody @Valid CourierRequestDTO request) {
-		storeService.saveByCourier(request);
+	public ResponseEntity<String> saveByLocations(@RequestBody @Valid CourierRequestDTO request) {
+		storeService.saveByLocations(request);
 		return ResponseEntity.ok("SUCCESSFUL");
 	}
 	
 	@GetMapping("/{id}")
 	public ResponseEntity<CourierDTO> getTotalDistance(@PathVariable("id") int id) {
-		return ResponseEntity.ok(storeService.queryingTotalDistances(id));
+		return ResponseEntity.ok(storeService.getTotalTravelDistance(id));
 	}
 
 }
